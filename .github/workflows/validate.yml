@@ -1,0 +1,61 @@
+name: Validate Skill
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SKILL.md exists and has frontmatter
+        run: |
+          if [ ! -f "SKILL.md" ]; then
+            echo "SKILL.md missing"
+            exit 1
+          fi
+          if ! head -1 SKILL.md | grep -q "^---"; then
+            echo "SKILL.md missing YAML frontmatter"
+            exit 1
+          fi
+          echo "SKILL.md OK"
+
+      - name: Check all referenced files exist
+        run: |
+          files=(
+            "references/tech-stack.md"
+            "references/validation.md"
+            "references/architecture.md"
+            "references/launch.md"
+            "references/marketing.md"
+          )
+          for f in "${files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "Missing: $f"
+              exit 1
+            fi
+          done
+          echo "All reference files OK"
+
+      - name: Check SKILL.md size (warn if over 500 lines)
+        run: |
+          lines=$(wc -l < SKILL.md)
+          echo "SKILL.md: $lines lines"
+          if [ "$lines" -gt 500 ]; then
+            echo "Warning: SKILL.md exceeds 500 lines ($lines). Consider moving content to references/."
+          fi
+
+      - name: Lint markdown links
+        run: |
+          # Check that all references/X.md links in SKILL.md point to existing files
+          grep -o 'references/[a-z-]*\.md' SKILL.md | while read link; do
+            if [ ! -f "$link" ]; then
+              echo "Broken link in SKILL.md: $link"
+              exit 1
+            fi
+          done
+          echo "All links OK"

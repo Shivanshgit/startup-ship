@@ -1,0 +1,7 @@
+.DS_Store
+*.skill
+workspace/
+*-workspace/
+node_modules/
+__pycache__/
+*.pyc
